@@ -18,27 +18,10 @@ jobs:
         name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache Composer packages
-        id: composer-cache
-        uses: actions/cache@v3
-        with:
-          path: vendor
-          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-php-
-
-      - name: Validate composer.json and composer.lock
-        run: composer validate --strict
-        working-directory: ./src
-
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-progress
-        working-directory: ./src
 
       -
         name: Build Docker images
@@ -47,12 +30,12 @@ jobs:
           pull: true
           load: true
           files: |
-            compose.yaml
-            compose.override.yaml
+            compose.prod.yaml
           set: |
             *.cache-from=type=gha,scope=${{github.ref}}
             *.cache-from=type=gha,scope=refs/heads/main
             *.cache-to=type=gha,scope=${{github.ref}},mode=max
+
       -
         name: Start services
         run: docker compose up --wait
