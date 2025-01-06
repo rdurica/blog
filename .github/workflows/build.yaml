@@ -11,12 +11,27 @@ jobs:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
     env:
-      APP_NAME: "rdurica/xxxx"  # <-- Name of application
+      APP_NAME: "rdurica/blog"  # <-- Name of application
 
     steps:
       -
         name: Checkout
         uses: actions/checkout@v4
+      -
+        name: Clear Docker Build Cache
+        run: docker builder prune --all --force
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      -
+        name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -34,11 +49,7 @@ jobs:
           set: |
             *.cache-from=type=gha,scope=${{github.ref}}
             *.cache-from=type=gha,scope=refs/heads/main
-            *.cache-to=type=gha,scope=${{github.ref}},mode=max
-
-      -
-        name: Start services
-        run: docker compose up --wait
+            *.cache-to=type=gha,scope=${{github.sha}},mode=max
 
       - name: Login to DockerHub
         uses: docker/login-action@v2
@@ -57,7 +68,4 @@ jobs:
             *.tags=${{ env.APP_NAME }}:${{ github.ref_name }}
             *.tags=${{ env.APP_NAME }}:latest
             *.cache-from=type=gha,scope=refs/heads/main
-            *.cache-to=type=gha,scope=${{ github.ref }},mode=max
-
-      - name: Push Image Confirmation
-        run: echo "Docker image successfully built and pushed."
+            *.cache-to=type=gha,scope=${{ github.sha }},mode=max
