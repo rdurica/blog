@@ -1,0 +1,10 @@
+services:
+  php-fpm:
+    build:
+      context: .
+      dockerfile: build/dev/Dockerfile
+    volumes:
+      - ./src:/app/src
+      - ./build/dev/certs:/etc/nginx/certs
+    ports:
+      - 443:443
